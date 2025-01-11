@@ -1,8 +1,15 @@
-if [ -e $HOME/.bash_aliases ]; then
-  source $HOME/.bash_aliases
+#!/usr/bin/env bash
+#
+# vi: set ff=unix syntax=sh cc=80 ts=2 sw=2 expandtab :
+# shellcheck disable=SC1091,SC2016
+
+if [ -e "$HOME"/.bash_aliases ]; then
+  source "$HOME"/.bash_aliases
 fi
 
-declare InstallBasePackages=$(cat << EOT
+declare InstallBasePackages
+InstallBasePackages=$(
+  cat <<EOT
   echo "Atualizando pacotes"
   apt-get update
 
@@ -37,19 +44,19 @@ function HelperPodTemplate() {
   declare HelperRandomChars=${RANDOM}
   declare HelperPodName="helper-${HelperImage}-${HelperRandomChars}"
 
-  echo "Criando pod ${PodName}"
+  echo "Criando pod ${PodName:=null}"
 
   kubectl run \
-  --tty -i \
-  --quiet \
-  --rm \
-  --restart=Never \
-  --annotations="sidecar.istio.io/inject=false" \
-  --namespace ${HelperNamespace} \
-  --image ${HelperImage}:${HelperVersion} \
-  --env DEBIAN_FRONTEND=noninteractive \
-  --env DEBCONF_NOWARNINGS=yes \
-  ${HelperPodName} -- /bin/bash -c "${InstallBasePackages}"
+    --tty -i \
+    --quiet \
+    --rm \
+    --restart=Never \
+    --annotations="sidecar.istio.io/inject=false" \
+    --namespace "${HelperNamespace}" \
+    --image "${HelperImage}:${HelperVersion}" \
+    --env DEBIAN_FRONTEND=noninteractive \
+    --env DEBCONF_NOWARNINGS=yes \
+    "${HelperPodName}" -- /bin/bash -c "${InstallBasePackages}"
 }
 
 # @function: HelperKubernetesVanillaPodUbuntu
@@ -62,12 +69,12 @@ function HelperKubernetesVanillaPodUbuntu() {
   declare HelperPodName=${1}
 
   kubectl run \
-  --restart=Never \
-  --annotations="sidecar.istio.io/inject=false" \
-  --image ubuntu:22.04 \
-  --env DEBIAN_FRONTEND=noninteractive \
-  --env DEBCONF_NOWARNINGS=yes \
-  ${HelperPodName} -- /bin/bash -c "while true; do echo 'Container em execução'; sleep 5; done"
+    --restart=Never \
+    --annotations="sidecar.istio.io/inject=false" \
+    --image ubuntu:22.04 \
+    --env DEBIAN_FRONTEND=noninteractive \
+    --env DEBCONF_NOWARNINGS=yes \
+    "${HelperPodName}" -- /bin/bash -c "while true; do echo 'Container em execução'; sleep 5; done"
 }
 
 # @function: HelperKubernetesPodUbuntu
@@ -89,7 +96,7 @@ function HelperKubernetesPodUbuntu() {
   declare HelperImage="${2:-ubuntu}"
   declare HelperVersion="${3:-22.04}"
 
-  HelperPodTemplate ${HelperNamespace} ${HelperImage} ${HelperVersion}
+  HelperPodTemplate "${HelperNamespace}" "${HelperImage}" "${HelperVersion}"
 }
 
 # @function: HelperKubernetesPodNginx
@@ -104,7 +111,7 @@ function HelperKubernetesPodNginx() {
   declare HelperImage="${2:-nginx}"
   declare HelperVersion="${3:-1.23.1}"
 
-  HelperPodTemplate ${HelperNamespace} ${HelperImage} ${HelperVersion}
+  HelperPodTemplate "${HelperNamespace}" "${HelperImage}" "${HelperVersion}"
 }
 
 # @function: HelperKubernetesPodDelete
@@ -113,12 +120,12 @@ function HelperKubernetesPodNginx() {
 # @return: void
 # @exitcode 0 Sucesso
 function HelperKubernetesPodDelete() {
-  kubectl get pod | \
-  grep "helper" | \
-  kubectl '{print $1}' | \
-  while read HelperPod; do
-    kubectl delete pod ${HelperPod}
-  done
+  kubectl get pod |
+    grep "helper" |
+    kubectl '{print $1}' |
+    while read -r HelperPod; do
+      kubectl delete pod "${HelperPod}"
+    done
 }
 
 # @description: Converte páginas de documentação para PDF usando pandoc
@@ -129,11 +136,11 @@ function HelperKubernetesPodDelete() {
 # @exitcode 0 Sucesso
 function HelperPandocCreatePDFFromMarkdown() {
   docker run \
-  --rm \
-  -w //data \
-  --volume "/$(pwd):/data" \
-  --user $(id -u):$(id -g) pandoc/latex:2.9 sh -c \
-  'for f in *.md; do
+    --rm \
+    -w //data \
+    --volume "/$(pwd):/data" \
+    --user "$(id -u)":"$(id -g)" pandoc/latex:2.9 sh -c \
+    'for f in *.md; do
     pandoc "$f" -s -o "${f%.md}.pdf"
   done'
 }
@@ -144,14 +151,14 @@ function HelperPandocCreatePDFFromMarkdown() {
 # @return: void
 # @exitcode 0 Sucesso
 function HelperGetPasswordArgoCD() {
-  if [ -z ${ENV_HELPER_KUBERNETES_NAMESPACE_ARGOCD} ]; then
+  if [ -z "${ENV_HELPER_KUBERNETES_NAMESPACE_ARGOCD}" ]; then
     echo "${FUNCNAME[0]}: Não foi específicado o namespace do argocd, saindo"
 
     return 1
   fi
 
-  kubectl -n ${ENV_HELPER_KUBERNETES_NAMESPACE_ARGOCD} get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | \
-  base64 -d
+  kubectl -n "${ENV_HELPER_KUBERNETES_NAMESPACE_ARGOCD}" get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" |
+    base64 -d
   echo
 }
 
@@ -161,14 +168,14 @@ function HelperGetPasswordArgoCD() {
 # @return: void
 # @exitcode 0 Sucesso
 function HelperGetPasswordGrafana() {
-  if [ -z ${ENV_HELPER_KUBERNETES_NAMESPACE_GRAFANA} ]; then
+  if [ -z "${ENV_HELPER_KUBERNETES_NAMESPACE_GRAFANA}" ]; then
     echo "${FUNCNAME[0]}: Não foi específicado o namespace do grafana, saindo"
 
     return 1
   fi
 
-  kubectl get secret -n ${ENV_HELPER_KUBERNETES_NAMESPACE_GRAFANA} grafana -o jsonpath="{.data.admin-password}" | \
-  base64 -d
+  kubectl get secret -n "${ENV_HELPER_KUBERNETES_NAMESPACE_GRAFANA}" grafana -o jsonpath="{.data.admin-password}" |
+    base64 -d
   echo
 }
 
@@ -178,11 +185,11 @@ function HelperGetPasswordGrafana() {
 # @return: void
 # @exitcode 0 Sucesso
 function HelperGetPasswordDashboard() {
-  if [ -z ${ENV_HELPER_KUBERNETES_NAMESPACE_K8S_DASHBOARD} ]; then
+  if [ -z "${ENV_HELPER_KUBERNETES_NAMESPACE_K8S_DASHBOARD}" ]; then
     echo "${FUNCNAME[0]}: Não foi específicado o namespace do Dashboard do Kubernetes, saindo"
 
     return 1
   fi
 
-  kubectl -n ${ENV_HELPER_KUBERNETES_NAMESPACE_K8S_DASHBOARD} describe secret kubernetes-dashboard-token-fnbx9
+  kubectl -n "${ENV_HELPER_KUBERNETES_NAMESPACE_K8S_DASHBOARD}" describe secret kubernetes-dashboard-token-fnbx9
 }
