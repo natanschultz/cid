@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
+#
+# vi: set ff=unix syntax=sh cc=80 ts=2 sw=2 expandtab :
 # shellcheck disable=SC1091,SC1090
+#
+set -o errexit  # Exit on most errors (see the manual)
+set -o errtrace # Make sure any error trap is inherited
+set -o nounset  # Disallow expansion of unset variables
+set -o pipefail # Use last non-zero exit code in a pipeline
 
 # Include de todos os arquivos da ${CLI_ALIAS} que foram previamente selecionados
 source "${HOME}"/.env.config
