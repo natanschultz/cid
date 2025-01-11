@@ -1,0 +1,60 @@
+---
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: check-executables-have-shebangs
+      - id: check-merge-conflict
+        args:
+          - --assume-in-merge
+      - id: check-vcs-permalinks
+      - id: check-yaml
+      - id: check-xml
+        types:
+          - file
+          - non-executable
+          - text
+        types_or:
+          - xml
+          - plist
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: fix-byte-order-marker
+      - id: mixed-line-ending
+      - id: pretty-format-json
+      - id: trailing-whitespace
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.2
+    hooks:
+      - id: gitleaks
+  - repo: https://github.com/google/yamlfmt
+    rev: v0.12.1
+    hooks:
+      - id: yamlfmt
+        args: [--formatter, include_document_start=true]
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        args: [--strict]
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.8.0-1
+    hooks:
+      - id: shfmt
+        args: [--apply-ignore, --ln, bash, --i, "2", --ci]
+  - repo: https://github.com/pkolomytsev/pre-commit-shellcheck
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.3.0
+    hooks:
+      - id: prettier
+        args: [--prose-wrap=always, --print-width=80]
+  - repo: https://github.com/markdownlint/markdownlint
+    rev: v0.13.0
+    hooks:
+      - id: markdownlint
+        args: [-r, ~MD046]
