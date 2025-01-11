@@ -1,3 +1,8 @@
+#!/usr/bin/env bash
+#
+# vi: set ff=unix syntax=sh cc=80 ts=2 sw=2 expandtab :
+# shellcheck disable=SC1091,SC2034,SC2221,SC2222
+
 # @function: OsCreateSSHKeys
 # @description: Criar chaves ssh
 # @noargs
@@ -7,18 +12,18 @@
 function OsCreateSSHKeys() {
   local OSDirectory=${1}
 
-  if [ -z ${OSDirectory} ]; then
+  if [ -z "${OSDirectory}" ]; then
     echo "Não foi informado o nome da chave a ser criado."
     echo "Exemplo: ${CLI_ALIAS} -osssh <chave>"
   fi
 
   if [ ! -d "${HOME}/.ssh/${OSDirectory}" ]; then
     mkdir -p "${HOME}/.ssh/${OSDirectory}"
-    ssh-keygen -t rsa -b 4096 -f ${HOME}/.ssh/${OSDirectory}/id_rsa -q -N ""
-    chmod 400 ${HOME}/.ssh/${OSDirectory}/id_rsa
+    ssh-keygen -t rsa -b 4096 -f "${HOME}"/.ssh/"${OSDirectory}"/id_rsa -q -N ""
+    chmod 400 "${HOME}"/.ssh/"${OSDirectory}"/id_rsa
 
     echo "Aqui esta a chave SSH publica para ${OSDirectory}"
-    cat ${HOME}/.ssh/${OSDirectory}/id_rsa.pub
+    cat "${HOME}"/.ssh/"${OSDirectory}"/id_rsa.pub
   else
     echo "Chaves já existem, saindo em ${HOME}/.ssh/${OSDirectory}"
 
@@ -34,19 +39,21 @@ function OsCreateSSHKeys() {
 # @exitcode 0 Sucesso
 # @exitcode 1 Parâmetro ENV_CONTAINER_MINIMUM_MEMORY não definido em .env.config
 function OsGetFreeMemory() {
-  if [ -z ${ENV_CONTAINER_MINIMUM_MEMORY} ]; then
+  if [ -z "${ENV_CONTAINER_MINIMUM_MEMORY}" ]; then
     echo "Parâmetro ENV_CONTAINER_MINIMUM_MEMORY não definido. Procure em .env.config pelo valor"
 
     return 1
   fi
 
   source /etc/os-release
-  if [ "${NAME}" == "Ubuntu" -o "${NAME}" == "Debian" ]; then
-    local OSMemoryInBytesUsage=$(cat /sys/fs/cgroup/memory.current)
-    local OSMemoryInBytesLimit=$(cat /sys/fs/cgroup/memory.max)
+  local OSMemoryInBytesUsage
+  local OSMemoryInBytesLimit
+  if [ "${NAME}" == "Ubuntu" ] || [ "${NAME}" == "Debian" ]; then
+    OSMemoryInBytesUsage=$(cat /sys/fs/cgroup/memory.current)
+    OSMemoryInBytesLimit=$(cat /sys/fs/cgroup/memory.max)
   elif [ "${NAME}" == "Alpine" ]; then
-    local OSMemoryInBytesLimit=$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes)
-    local OSMemoryInBytesUsage=$(cat /sys/fs/cgroup/memory/memory.usage_in_bytes)
+    OSMemoryInBytesLimit=$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes)
+    OSMemoryInBytesUsage=$(cat /sys/fs/cgroup/memory/memory.usage_in_bytes)
   else
     echo "Não foi possível fazer o calculo pois não foi possível detectar o OS utilizado, saindo"
 
@@ -54,9 +61,10 @@ function OsGetFreeMemory() {
   fi
 
   local OSCalcFreeMemoryInMegabytes="(${OSMemoryInBytesLimit}/1024/1024 - ${OSMemoryInBytesUsage}/1024/1024)"
-  local OSCalcFreeMemory="$(echo ${OSCalcFreeMemoryInMegabytes} | bc)"
+  local OSCalcFreeMemory
+  OSCalcFreeMemory="$(echo "${OSCalcFreeMemoryInMegabytes}" | bc)"
 
-  if [ ${OSCalcFreeMemory} -lt ${ENV_CONTAINER_MINIMUM_MEMORY} ]; then
+  if [ "${OSCalcFreeMemory}" -lt "${ENV_CONTAINER_MINIMUM_MEMORY}" ]; then
     local OSCalcFreeMemory="${_RED}${OSCalcFreeMemory}${_RESET}"
   fi
 
@@ -97,7 +105,7 @@ function OsCompareUTCWithBrazilianTime() {
 # @return: String
 # @exitcode 0 Sucesso
 function OSGetDateYYYYMMDD() {
-  echo $(date -d $(date +%Y-%m-%d) +%s)
+  date -d "$(date +%Y-%m-%d)" +%s
 }
 
 # @function: OSGetDate
@@ -116,12 +124,14 @@ function OSGetDate() {
 # @return: void
 # @exitcode 0 Sucesso
 function OsIsChristmasWeek() {
-  local OSChristmasStart=$(date -d $(date +%Y)-${ENV_OS_CHRISTMAS_MONTH}-${ENV_OS_CHRISTMAS_START} +%s)
-  local OSChristmasEnd=$(date -d $(date +%Y)-${ENV_OS_CHRISTMAS_MONTH}-${ENV_OS_CHRISTMAS_END} +%s)
+  local OSChristmasStart
+  OSChristmasStart="$(date -d "$(date +%Y)-${ENV_OS_CHRISTMAS_MONTH}-${ENV_OS_CHRISTMAS_START}" +%s)"
+  local OSChristmasEnd
+  OSChristmasEnd="$(date -d "$(date +%Y)-${ENV_OS_CHRISTMAS_MONTH}-${ENV_OS_CHRISTMAS_END}" +%s)"
 
-  if [ ${OSChristmasStart} -le ${OSChristmasEnd} -a \
-      $(OSGetDateYYYYMMDD) -ge ${OSChristmasStart} -a \
-      $(OSGetDateYYYYMMDD) -le ${OSChristmasEnd} ]; then
+  if [ "${OSChristmasStart}" -le "${OSChristmasEnd}" ] &&
+    [ "$(OSGetDateYYYYMMDD)" -ge "${OSChristmasStart}" ] &&
+    [ "$(OSGetDateYYYYMMDD)" -le "${OSChristmasEnd}" ]; then
 
     StartEmoji="\\U1F332" # Papai Noel
     EndEmoji="\\U1F385"   # Arvore
@@ -147,22 +157,22 @@ function OsPermissionSanitization() {
   local OSChmod=${2}
   local OSForce=${3}
 
-  if [ -z ${OSObject} -o -z ${OSChmod} ]; then
+  if [ -z "${OSObject}" ] || [ -z "${OSChmod}" ]; then
     echo "Passe os dois argumentos necessários: [Object] e [Key]"
 
     return 1
   fi
 
-  if [ -n "${OSForce}" -a "${OSForce}" == "-f" ]; then
+  if [ -n "${OSForce}" ] && [ "${OSForce}" == "-f" ]; then
     local OSOption="yes"
   else
-    read -p "Setando permissão para ${OSChmod}, tem certeza?: " OSOption
+    read -r -p "Setando permissão para ${OSChmod}, tem certeza?: " OSOption
   fi
 
   for OSAllowedPermissions in yes y sim s yeap; do
-    if [ ${OSOption} == "${OSAllowedPermissions}" ]; then
+    if [ "${OSOption}" == "${OSAllowedPermissions}" ]; then
       echo "Aguarde..."
-      find . -type ${OSObject} -exec chmod ${OSChmod} {} \;
+      find . -type "${OSObject}" -exec chmod "${OSChmod}" {} \;
     fi
   done
 }
@@ -174,14 +184,14 @@ function OsPermissionSanitization() {
 # @exitcode 0 Sucesso
 # @exitcode 1 Parâmetro ENV_OS_DEFAULT_PERMISSION_DIRECTORY não definido em .env.config
 function OsPermissionSanitizationForFiles() {
-  if [ -z ${ENV_OS_DEFAULT_PERMISSION_FILES} ]; then
+  if [ -z "${ENV_OS_DEFAULT_PERMISSION_FILES}" ]; then
     echo "Parâmetro ENV_OS_DEFAULT_PERMISSION_FILES não definido."
     echo "Procure em .env.config pelo valor."
 
     return 1
   fi
 
-  OsPermissionSanitization f ${ENV_OS_DEFAULT_PERMISSION_FILES}
+  OsPermissionSanitization f "${ENV_OS_DEFAULT_PERMISSION_FILES}"
 }
 
 # @function: OsPermissionForDirectoriesSanitization
@@ -191,14 +201,14 @@ function OsPermissionSanitizationForFiles() {
 # @exitcode 0 Sucesso
 # @exitcode 1 Parâmetro ENV_OS_DEFAULT_PERMISSION_DIRECTORY não definido em .env.config
 function OsPermissionSanitizationForDirectories() {
-  if [ -z ${ENV_OS_DEFAULT_PERMISSION_DIRECTORY} ]; then
+  if [ -z "${ENV_OS_DEFAULT_PERMISSION_DIRECTORY}" ]; then
     echo "Parâmetro ENV_OS_DEFAULT_PERMISSION_DIRECTORY não definido."
     echo "Procure em .env.config pelo valor."
 
     return 1
   fi
 
-  OsPermissionSanitization d ${ENV_OS_DEFAULT_PERMISSION_DIRECTORY}
+  OsPermissionSanitization d "${ENV_OS_DEFAULT_PERMISSION_DIRECTORY}"
 }
 
 # @function: OsDetectOS
@@ -208,10 +218,10 @@ function OsPermissionSanitizationForDirectories() {
 # @exitcode 0 Sucesso
 function OsDetectOS() {
   case "$(uname -sr)" in
-    Darwin*)                       echo "Mac";;
-    Linux*Microsoft*)              echo "WSL";;
-    Linux*)                        echo "Linux" ;;
-    CYGWIN*|MINGW*|MINGW32*|MSYS*) echo "Windows" ;;
-    *)                             echo "Other" ;;
+    Darwin*) echo "Mac" ;;
+    Linux*Microsoft*) echo "WSL" ;;
+    Linux*) echo "Linux" ;;
+    CYGWIN* | MINGW* | MINGW32* | MSYS*) echo "Windows" ;;
+    *) echo "Other" ;;
   esac
 }
