@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+#
+# vi: set ff=unix syntax=sh cc=80 ts=2 sw=2 expandtab :
 
 function CreateNewClient() {
   local ClientName="${1}"
@@ -22,7 +24,8 @@ function help() {
 }
 
 case "$1" in
-  -cnc )
-    CreateNewClient ${2} ;;
-  *) help
+  -cnc)
+    CreateNewClient ${2}
+    ;;
+  *) help ;;
 esac
