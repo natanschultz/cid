@@ -1,10 +1,14 @@
+#!/usr/bin/env bash
+#
+# vi: set ff=unix syntax=sh cc=80 ts=2 sw=2 expandtab :
+
 # @function: KubernetesInitialConfigurationExists
 # @description: Retorna 1 caso não for encontrado a configuração para Kubernetes
 # @noargs
 # @return: String<Number>
 # @exitcode 1 Não for encontrada configuração para Kubernetes
 function KubernetesInitialConfigurationExists() {
-  if [ $(find $HOME/.kube -maxdepth 1 -type f | wc -l) -eq 0 ]; then
+  if [ "$(find "$HOME"/.kube -maxdepth 1 -type f | wc -l)" -eq 0 ]; then
     echo 1
   fi
 
@@ -17,14 +21,14 @@ function KubernetesInitialConfigurationExists() {
 # @return: String
 # @exitcode 0 Sucesso
 function KubernetesGetCurrentCluster() {
-  if [ $(KubernetesInitialConfigurationExists) -eq 1 ]; then
+  if [ "$(KubernetesInitialConfigurationExists)" -eq 1 ]; then
     echo "${FUNCNAME[0]}: Problema ao buscar o nome do cluster, saindo"
 
     return 1
   fi
 
-  kubectl config view --minify -o jsonpath='{.clusters[].name}' | \
-  cut -d "/" -f2 2>/dev/null
+  kubectl config view --minify -o jsonpath='{.clusters[].name}' |
+    cut -d "/" -f2 2>/dev/null
 }
 
 # @function: KubernetesGetCurrentNamespace
@@ -33,7 +37,8 @@ function KubernetesGetCurrentCluster() {
 # @return: String
 # @exitcode 0 Sucesso
 function KubernetesGetCurrentNamespace() {
-  local KubernetesGetCurrentNamespace="$(
+  local KubernetesGetCurrentNamespace
+  KubernetesGetCurrentNamespace="$(
     kubectl config view --minify -o jsonpath='{..namespace}'
   )"
 
@@ -43,7 +48,7 @@ function KubernetesGetCurrentNamespace() {
     return 0
   fi
 
-  echo ${KubernetesGetCurrentNamespace}
+  echo "${KubernetesGetCurrentNamespace}"
 }
 
 # @function: KubernetesSetCurrentNamespace
@@ -55,15 +60,15 @@ function KubernetesGetCurrentNamespace() {
 function KubernetesSetCurrentNamespace() {
   local KubernetesNamespace=${1:-default}
 
-  if [ -z ${KubernetesNamespace} ]; then
+  if [ -z "${KubernetesNamespace}" ]; then
     echo "${FUNCNAME[0]}: Namespace não informado, saindo"
 
     return 1
   fi
 
   kubectl config set-context \
-  --current \
-  --namespace=${KubernetesNamespace}
+    --current \
+    --namespace="${KubernetesNamespace}"
 }
 
 # @function: KubernetesSetCurrentCluster
@@ -76,7 +81,7 @@ function KubernetesSetCurrentNamespace() {
 function KubernetesSetCurrentCluster() {
   local KubernetesClusterName=${1}
 
-  if [ ! -f "${HOME}/.kube/${KubernetesClusterName}" -o -z ${KubernetesClusterName} ]; then
+  if [ ! -f "${HOME}/.kube/${KubernetesClusterName}" ] || [ -z "${KubernetesClusterName}" ]; then
     echo "${FUNCNAME[0]}: Arquivo não encontrado ou variável não setada."
     echo "${FUNCNAME[0]}: Use ${_CYAN}${CLI_ALIAS} -ksc <cluster-name>${_RESET} para gerar arquivo de configuração."
 
@@ -84,10 +89,10 @@ function KubernetesSetCurrentCluster() {
   fi
 
   kubectl config \
-  --kubeconfig=${HOME}/.kube/${KubernetesClusterName} \
-  set-cluster ${KubernetesClusterName}
+    --kubeconfig="${HOME}"/.kube/"${KubernetesClusterName}" \
+    set-cluster "${KubernetesClusterName}"
 
-  ln -sf ${HOME}/.kube/${KubernetesClusterName} ${HOME}/.kube/config
+  ln -sf "${HOME}"/.kube/"${KubernetesClusterName}" "${HOME}"/.kube/config
 }
 
 # @function: KubernetesListTopPodsBy
@@ -111,38 +116,40 @@ Exemplos:
 
 EOT
 
+  #TODO: rever uso de arrays
   while getopts ":m:n:t:" opt; do
     case $opt in
       m) KubernetesMetric=("$OPTARG") ;;
       n) KubernetesNamespace=("$OPTARG") ;;
       t) KubernetesTop=("$OPTARG") ;;
+      *) break ;;
     esac
   done
 
-  if [ -z ${KubernetesMetric} ]; then
+  if [ -z "${KubernetesMetric[0]}" ]; then
     local KubernetesMetric="memory"
   fi
 
-  if [ -z ${KubernetesNamespace} ]; then
+  if [ -z "${KubernetesNamespace[0]}" ]; then
     local KubernetesNamespace="--all-namespaces"
   else
     local KubernetesNamespace="--namespace ${KubernetesNamespace}"
   fi
 
   echo "Listando pods em ${_CYAN}${KubernetesNamespace}${_RESET} filtrando por ${_CYAN}${KubernetesMetric}${_RESET}"
-  if [ -z ${Top} ]; then
+  if [ -z "${Top}" ]; then
     local Top=10
 
-    kubectl top pods ${KubernetesNamespace} \
-    --sort-by=${KubernetesMetric} | \
-    head -n ${KubernetesTop}
+    kubectl top pods "${KubernetesNamespace}" \
+      --sort-by="${KubernetesMetric}" |
+      head -n "${KubernetesTop[0]}"
   else
-    local Top=${KubernetesTop}
+    local Top="${KubernetesTop[0]}"
 
-    kubectl top pods ${KubernetesNamespace} \
-    --no-headers \
-    --sort-by=${KubernetesMetric} | \
-    head -n ${KubernetesTop}
+    kubectl top pods "${KubernetesNamespace}" \
+      --no-headers \
+      --sort-by="${KubernetesMetric}" |
+      head -n "${KubernetesTop[0]}"
   fi
 }
 
@@ -153,9 +160,9 @@ EOT
 # @exitcode 0 Sucesso
 function KubernetesListAllServices() {
   kubectl \
-  --no-headers \
-  --all-namespaces \
-  get svc
+    --no-headers \
+    --all-namespaces \
+    get svc
 }
 
 # @function: KubernetesListServicesIgnoringFromList
@@ -171,14 +178,14 @@ function KubernetesListServicesIgnoringFromList() {
     return 1
   fi
 
-  if [ -z ${ENV_KUBERNETES_REMOVE_NAMESPACES} ]; then
+  if [ -z "${ENV_KUBERNETES_REMOVE_NAMESPACES}" ]; then
     echo "${FUNCNAME[0]}: ENV_KUBERNETES_REMOVE_NAMESPACES não foi informado no arquivo .env.config"
 
     return 1
   fi
 
-  KubernetesListAllServices | \
-  grep -Evf <(printf '%s\n' "${ENV_KUBERNETES_REMOVE_NAMESPACES[@]}")
+  KubernetesListAllServices |
+    grep -Evf <(printf '%s\n' "${ENV_KUBERNETES_REMOVE_NAMESPACES[@]}")
 }
 
 # @function: KubernetesAmountServicesIgnoringNamespaces
@@ -194,15 +201,14 @@ function KubernetesAmountServicesIgnoringNamespaces() {
     return 1
   fi
 
-  if [ -z ${KUBERNETES_REMOVE_NAMESPACES} ]; then
+  if [ -z "${KUBERNETES_REMOVE_NAMESPACES}" ]; then
     echo "${FUNCNAME[0]}: KUBERNETES_REMOVE_NAMESPACES não foi informado no arquivo .env.config"
 
     return 1
   fi
 
-  KubernetesListAllServices | \
-  grep -Evf <(printf '%s\n' "${ENV_KUBERNETES_REMOVE_NAMESPACES[@]}") | \
-  wc -l
+  KubernetesListAllServices |
+    grep -Evfc <(printf '%s\n' "${ENV_KUBERNETES_REMOVE_NAMESPACES[@]}")
 }
 
 # @function: KubernetesAmountServices
