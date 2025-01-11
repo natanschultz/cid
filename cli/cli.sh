@@ -1,20 +1,30 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC1091,SC1090
 
 # Include de todos os arquivos da ${CLI_ALIAS} que foram previamente selecionados
-source ${HOME}/.env.config
+source "${HOME}"/.env.config
 
-declare _RED="$(tput setaf 1)"
-declare _GREEN="$(tput setaf 2)"
-declare _YELLOW=$(tput setaf 3)
-declare _BLUE=$(tput setaf 4)
-declare _MAGENTA=$(tput setaf 5)
-declare _CYAN=$(tput setaf 6)
-declare _WHYTE=$(tput setaf 7)
-declare _RESET=$(tput sgr0)
-declare _BOLD=$(tput bold)
+_RED="$(tput setaf 1)"
+readonly _RED
+_GREEN="$(tput setaf 2)"
+readonly _GREEN
+_YELLOW=$(tput setaf 3)
+readonly _YELLOW
+_BLUE=$(tput setaf 4)
+readonly _BLUE
+_MAGENTA=$(tput setaf 5)
+readonly _MAGENTA
+_CYAN=$(tput setaf 6)
+readonly _CYAN
+_WHYTE=$(tput setaf 7)
+readonly _WHYTE
+_RESET=$(tput sgr0)
+readonly _RESET
+_BOLD=$(tput bold)
+readonly _BOLD
 
 function HelpShowFunctionNamesAWS() {
-cat << EOT
+  cat <<EOT
 
 Funções para Aws
   Segurança
@@ -60,7 +70,7 @@ EOT
 }
 
 function HelpShowFunctionNamesKubernetes() {
-cat << EOT
+  cat <<EOT
 
 Funções para Kubernetes
   -kgcn    | KubernetesGetCurrentNamespace                  Mostra o contexto atual do namespace
@@ -110,7 +120,7 @@ EOT
 }
 
 function HelpShowFunctionNamesOS() {
-cat << EOT
+  cat <<EOT
 
 Funções para Os (Sistema Operacional)
   -osssh   | OsCreateSSHKeys                                Cria uma chave ssh em ${HOME}/.ssh/<chave>/id_rsa
@@ -124,7 +134,7 @@ EOT
 }
 
 function HelpShowFunctionNamesRabbitMQ() {
-cat << EOT
+  cat <<EOT
 
 Funções para RabbitMQ
   -rmqgu   | RabbitMQGetUsers                               Retorna user
@@ -138,7 +148,7 @@ EOT
 }
 
 function HelpShowFunctionNamesHelpers() {
-cat << EOT
+  cat <<EOT
 
 Funções para Helpers
   -hpu     | HelperKubernetesPodUbuntu                      Cria um pod com Ubuntu com algumas ferramentas já instaladas
@@ -154,7 +164,7 @@ EOT
 }
 
 function HelpShowFunctionNamesTerraform() {
-cat << EOT
+  cat <<EOT
 
 Funções para Terraform
   -tic     | TerraformInitCommand                           Mostra os possíveis comandos para terraform init
@@ -168,9 +178,8 @@ Funções para Terraform
 EOT
 }
 
-
 function HelpShowFunctionNamesDocker() {
-cat << EOT
+  cat <<EOT
 
 Funções para Docker
   -did     | DockerIsThisDocker                             Se o ambiente é Docker
@@ -179,7 +188,7 @@ EOT
 }
 
 function HelpShowFunctionNamesTests() {
-cat << EOT
+  cat <<EOT
 
 Funções para Testes
   -taf     | TestAllFunctions                               Testa todas as funções se conseguem ser chamadas
@@ -192,9 +201,9 @@ EOT
 }
 
 function help() {
-  local HelpShowFunctionName="${1}"
+  #local HelpShowFunctionName="${1}"
 
-  for ToolsToInclude in ${ENV_CONFIG_TOOLS[@]}; do
+  for ToolsToInclude in "${ENV_CONFIG_TOOLS[@]}"; do
     if [ "${ToolsToInclude}" == "aws" ]; then
       HelpShowFunctionNamesAWS
     fi
@@ -232,7 +241,7 @@ function help() {
 function Search() {
   local Search="${1}"
 
-  if [ -z ${Search} ]; then
+  if [ -z "${Search}" ]; then
     echo "Passe a string que deve ser procurada"
 
     return 1
@@ -248,11 +257,11 @@ function Search() {
 # @return: Text
 # @exitcode 0 Sucesso
 function Summary() {
-  find ${CLI_FULL_PATH} -name "*.sh" | xargs wc -l
+  find "${CLI_FULL_PATH}" -print0 -name "*.sh" | xargs -0 wc -l
 }
 
 function ResetPS1() {
-  source ${HOME}/.bashrc
+  source "${HOME}"/.bashrc
 }
 
 # Arquivos que sempre serão carregados no container
@@ -262,17 +271,17 @@ source "${CLI_FULL_PATH}/src/git.sh"
 
 # Inclusão do arquivo que realiza todos os testes das Functions
 if [ -e "${CLI_FULL_PATH}/tests/bootstrap.sh" ]; then
-  source ${CLI_FULL_PATH}/tests/bootstrap.sh
+  source "${CLI_FULL_PATH}"/tests/bootstrap.sh
 fi
 
 case "$1" in
-  -h  | "" ) help ;;
-  -s  ) Search ${2} ;;
-  -ss ) Summary ;;
-  -rs ) ResetPS1 ;;
-  * )
+  -h | "") help ;;
+  -s) Search "${2}" ;;
+  -ss) Summary ;;
+  -rs) ResetPS1 ;;
+  *)
     # Faz include dos arquivos que foram selecionados no arquivo .env.config
-    for ToolsToInclude in ${ENV_CONFIG_TOOLS[@]}; do
+    for ToolsToInclude in "${ENV_CONFIG_TOOLS[@]}"; do
       if [ -f "${CLI_FULL_PATH}/src/${ToolsToInclude}.sh" ]; then
         source "${CLI_FULL_PATH}/src/${ToolsToInclude}.sh"
       fi
@@ -281,32 +290,42 @@ case "$1" in
       if [ "${ToolsToInclude}" == "kubernetes" ]; then
         case "$1" in
           # Metrics
-          -ktp     )
-            KubernetesListTopPodsBy $@ ;;
+          -ktp)
+            KubernetesListTopPodsBy "$@"
+            ;;
 
           # Cluster
-          -kgcn    )
-            KubernetesGetCurrentNamespace ;;
-          -ksc     )
-            KubernetesSetCurrentCluster ${2} ;;
-          -ksn     )
-            KubernetesSetCurrentNamespace ${2} ${3} ;;
+          -kgcn)
+            KubernetesGetCurrentNamespace
+            ;;
+          -ksc)
+            KubernetesSetCurrentCluster "${2}"
+            ;;
+          -ksn)
+            KubernetesSetCurrentNamespace "${2}" "${3}"
+            ;;
 
           # Secrets
-          -kgss    )
-            KubernetesGetSpecificSecret ;;
-          -kgs     )
-            KubernetesGetAllSecrets ;;
+          -kgss)
+            KubernetesGetSpecificSecret
+            ;;
+          -kgs)
+            KubernetesGetAllSecrets
+            ;;
 
           # Services
-          -klas     )
-            KubernetesListAllServices ;;
-          -klase    )
-            KubernetesListServicesIgnoringFromList ;;
-          -kas    )
-            KubernetesAmountServices ;;
-          -kasin    )
-            KubernetesAmountServicesIgnoringNamespaces ;;
+          -klas)
+            KubernetesListAllServices
+            ;;
+          -klase)
+            KubernetesListServicesIgnoringFromList
+            ;;
+          -kas)
+            KubernetesAmountServices
+            ;;
+          -kasin)
+            KubernetesAmountServicesIgnoringNamespaces
+            ;;
         esac
       fi
 
@@ -314,128 +333,173 @@ case "$1" in
       if [ "${ToolsToInclude}" == "aws" ]; then
         case "$1" in
 
-          -adc     )
-            AWSGetCredentials ;;
+          -adc)
+            AWSGetCredentials
+            ;;
 
           # Cloudfront
-          -agcf    )
-            AWSCloudfrontListAllById ;;
+          -agcf)
+            AWSCloudfrontListAllById
+            ;;
 
           # API Gateway
-          -aagwga  )
-            AWSApiGatewayGetAll ;;
-          -aagwgra )
-            AWSApiGatewayGetRestAPIs ;;
-          -aagwgr  )
-            AWSApiGatewayGetResources ;;
-          -aagwri  )
-            AWSApiGatewayGetResourcesIntegrationRequests ;;
+          -aagwga)
+            AWSApiGatewayGetAll
+            ;;
+          -aagwgra)
+            AWSApiGatewayGetRestAPIs
+            ;;
+          -aagwgr)
+            AWSApiGatewayGetResources
+            ;;
+          -aagwri)
+            AWSApiGatewayGetResourcesIntegrationRequests
+            ;;
 
           # Secrets Manager
-          -asmga   )
-            AWSSecretsManagerGetAll ;;
-          -asmgabn )
-            AWSSecretsManagerGetByName ;;
-          -asmgbt  )
-            AWSSecretsManagerGetByTag ${2} ;;
-          -asmdf   )
-            AWSSecretsManagerDeleteForced ${2} ;;
+          -asmga)
+            AWSSecretsManagerGetAll
+            ;;
+          -asmgabn)
+            AWSSecretsManagerGetByName
+            ;;
+          -asmgbt)
+            AWSSecretsManagerGetByTag "${2}"
+            ;;
+          -asmdf)
+            AWSSecretsManagerDeleteForced "${2}"
+            ;;
 
-        # Lambdas
-          -allf    )
-            AWSLambdaListFunctions ;;
-          -alif    )
-            AWSLambdaInvokeFunction ${2} ;;
+            # Lambdas
+          -allf)
+            AWSLambdaListFunctions
+            ;;
+          -alif)
+            AWSLambdaInvokeFunction "${2}"
+            ;;
 
-        # EKS
-          -kgc     )
-            AWSEKSGetClusters ;;
-          -kga     )
-            AWSEKSGenerateAuths ${2} ;;
-          -kgac    )
-            AWSEKSGetAmountClusters ;;
-          -kgan    )
-            AWSEKSGetAmountNodes ;;
-          -kgcv    )
-            AWSEKSGetClusterVersion ;;
-          -kgnc    )
-            AWSEKSGetNodeGroupsFilteredByCluster ;;
-          -kgnbc   )
-            AWSEKSGetNodeGroupsByCluster ;;
-          -kgang   )
-            AWSEKSGetAmountNodeGroups ;;
-          -kdngbc  )
-            AWSEKSDescribeNodeGroupsByCluster ${2};;
-          -kgni    )
-            AWSEKSGetNodeGroupsInfos ${2} ;;
-          -klnpl   )
-            AWSEKSListNodesPerLabel ;;
+            # EKS
+          -kgc)
+            AWSEKSGetClusters
+            ;;
+          -kga)
+            AWSEKSGenerateAuths "${2}"
+            ;;
+          -kgac)
+            AWSEKSGetAmountClusters
+            ;;
+          -kgan)
+            AWSEKSGetAmountNodes
+            ;;
+          -kgcv)
+            AWSEKSGetClusterVersion
+            ;;
+          -kgnc)
+            AWSEKSGetNodeGroupsFilteredByCluster
+            ;;
+          -kgnbc)
+            AWSEKSGetNodeGroupsByCluster
+            ;;
+          -kgang)
+            AWSEKSGetAmountNodeGroups
+            ;;
+          -kdngbc)
+            AWSEKSDescribeNodeGroupsByCluster "${2}"
+            ;;
+          -kgni)
+            AWSEKSGetNodeGroupsInfos "${2}"
+            ;;
+          -klnpl)
+            AWSEKSListNodesPerLabel
+            ;;
         esac
       fi
 
       # Arquivo helpers.sh
       if [ "${ToolsToInclude}" == "helpers" ]; then
         case "$1" in
-          -hpu     )
-            HelperKubernetesPodUbuntu ;;
-          -hpb     )
-            HelperKubernetesPodNginx ;;
-          -hpd     )
-            HelperKubernetesPodDelete ;;
-          -hdgt    )
-            HelperDockerGetTag ${2} ;;
-          -hgpa    )
-            HelperGetPasswordArgoCD ;;
-          -hgpg    )
-            HelperGetPasswordGrafana ;;
-          -hgpk    )
-            HelperGetPasswordDashboard ;;
-          -hgtk    )
-            HelperGetTokenKeycloak ${2} ${3} ;;
+          -hpu)
+            HelperKubernetesPodUbuntu
+            ;;
+          -hpb)
+            HelperKubernetesPodNginx
+            ;;
+          -hpd)
+            HelperKubernetesPodDelete
+            ;;
+          -hdgt)
+            HelperDockerGetTag "${2}"
+            ;;
+          -hgpa)
+            HelperGetPasswordArgoCD
+            ;;
+          -hgpg)
+            HelperGetPasswordGrafana
+            ;;
+          -hgpk)
+            HelperGetPasswordDashboard
+            ;;
+          -hgtk)
+            HelperGetTokenKeycloak "${2}" "${3}"
+            ;;
         esac
       fi
 
       # Arquivo rabbitmq.sh
       if [ "${ToolsToInclude}" == "rabbitmq" ]; then
         case "$1" in
-          -rmqhelp )
-            RabbitMQHelp ;;
-          -rmqgu   )
+          -rmqhelp)
+            RabbitMQHelp
+            ;;
+          -rmqgu)
             RabbitMQCheckEnvironmentVariables
-            RabbitMQGetUsers ;;
-          -rmqgm   )
+            RabbitMQGetUsers
+            ;;
+          -rmqgm)
             RabbitMQCheckEnvironmentVariables
-            RabbitMQGetMessages ;;
-          -rmqge   )
+            RabbitMQGetMessages
+            ;;
+          -rmqge)
             RabbitMQCheckEnvironmentVariables
-            RabbitMQGetExtensions ;;
-          -rmqgd   )
+            RabbitMQGetExtensions
+            ;;
+          -rmqgd)
             RabbitMQCheckEnvironmentVariables
-            RabbitMQGetDefinitions ;;
-          -rmqlc   )
-            RabbitMQListConnections $@ ;;
-          -rmqgac  )
-            RabbitMQGetAmountConnections ;;
-          -rmqlcn  )
-            RabbitMQListConnectionsName ;;
+            RabbitMQGetDefinitions
+            ;;
+          -rmqlc)
+            RabbitMQListConnections "$@"
+            ;;
+          -rmqgac)
+            RabbitMQGetAmountConnections
+            ;;
+          -rmqlcn)
+            RabbitMQListConnectionsName
+            ;;
         esac
       fi
 
       # Arquivo terraform.sh
       if [ "${ToolsToInclude}" == "terraform" ]; then
         case "$1" in
-          -tic     )
-            TerraformInitCommand ;;
-          -tgcw    )
-            TerraformGetCurrentWorkspace ;;
-          -tsc     )
-            TerraformDirectoryAndFileStructureCreate ${2} ${3} ;;
-          -tsv     )
-            TerraformSetVersion ${2} ;;
-          -tsiv    )
-            TerraformShowInstalledVersions ;;
-          -titl    )
-            TerraformInstallTfLint ;;
+          -tic)
+            TerraformInitCommand
+            ;;
+          -tgcw)
+            TerraformGetCurrentWorkspace
+            ;;
+          -tsc)
+            TerraformDirectoryAndFileStructureCreate "${2}" "${3}"
+            ;;
+          -tsv)
+            TerraformSetVersion "${2}"
+            ;;
+          -tsiv)
+            TerraformShowInstalledVersions
+            ;;
+          -titl)
+            TerraformInstallTfLint
+            ;;
         esac
       fi
     done
@@ -443,33 +507,47 @@ case "$1" in
     # Demais funções que sempre serão inseridas nos containers
     case "$1" in
       # OS
-      -osssh   )
-        OsCreateSSHKeys ;;
-      -osgfm   )
-        OsGetFreeMemory ;;
-      -osgt    )
-        OsGetTime ;;
-      -osgtu   )
-        OsGetTimeUTC ;;
-      -oscub   )
-        OsCompareUTCWithBrazilianTime ;;
-      -ospff   )
-        OsPermissionForFilesSanitization ;;
-      -ospfd   )
-        OsPermissionForDirectoriesSanitization ;;
+      -osssh)
+        OsCreateSSHKeys
+        ;;
+      -osgfm)
+        OsGetFreeMemory
+        ;;
+      -osgt)
+        OsGetTime
+        ;;
+      -osgtu)
+        OsGetTimeUTC
+        ;;
+      -oscub)
+        OsCompareUTCWithBrazilianTime
+        ;;
+      -ospff)
+        OsPermissionForFilesSanitization
+        ;;
+      -ospfd)
+        OsPermissionForDirectoriesSanitization
+        ;;
 
       # Testes
-      -taf     )
-        TestAllFunctions ;;
-      -tsr     )
-        TestShowMeResults ;;
-      -tsf     )
-        TestSearchFunctionsCreated ;;
-      -tlf     )
-        TestListFunctions ;;
-      -tsfn    )
-        TestShowFunctionNames ;;
-      -tgat    )
-        TestGetAmountTestedFunctions ;;
+      -taf)
+        TestAllFunctions
+        ;;
+      -tsr)
+        TestShowMeResults
+        ;;
+      -tsf)
+        TestSearchFunctionsCreated
+        ;;
+      -tlf)
+        TestListFunctions
+        ;;
+      -tsfn)
+        TestShowFunctionNames
+        ;;
+      -tgat)
+        TestGetAmountTestedFunctions
+        ;;
     esac
+    ;;
 esac
