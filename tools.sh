@@ -6,6 +6,14 @@ set -o errtrace # Make sure any error trap is inherited
 set -o nounset  # Disallow expansion of unset variables
 set -o pipefail # Use last non-zero exit code in a pipelin
 
+trap 'echo "Erro na linha: ${LINENO}. Status code: ${?}" >&2' ERR
+
+# Debug
+if [[ ${DEBUG-} =~ ^1|yes|true$ ]]; then
+  export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+  set -o xtrace # Trace the execution of the script (debug)
+fi
+
 function CreateNewClient() {
   local ClientName="${1}"
 
