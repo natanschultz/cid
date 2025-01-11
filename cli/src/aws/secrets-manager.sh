@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+#
+# vi: set ff=unix syntax=sh cc=80 ts=2 sw=2 expandtab :
+
 # Secrets Manager
 # @function: AWSSecretsManagerListAll
 # @description: Lista todas as secrets cadastradas no Secrets Manager
@@ -15,8 +19,8 @@ function AWSSecretsManagerListAll() {
 # @exitcode 0 Sucesso
 function AWSSecretsManagerListByName() {
   AWSSecretsManagerListAll \
-  --query SecretList[*].[Name] \
-  --output text
+    --query SecretList[*].[Name] \
+    --output text
 }
 
 # @function: AWSSecretsManagerListByTag
@@ -36,7 +40,7 @@ function AWSSecretsManagerListByTag() {
   fi
 
   aws secretsmanager list-secrets \
-  --filter Key=tag-value,Values="${AWStagValue}"
+    --filter Key=tag-value,Values="${AWStagValue}"
 }
 
 # @function: AWSSecretsManagerDeleteForced
@@ -56,6 +60,6 @@ function AWSSecretsManagerDeleteForced() {
   fi
 
   aws secretsmanager delete-secret \
-  --secret-id ${AWSSecretId} \
-  --force-delete-without-recovery
+    --secret-id "${AWSSecretId}" \
+    --force-delete-without-recovery
 }
