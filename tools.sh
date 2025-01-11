@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 #
 # vi: set ff=unix syntax=sh cc=80 ts=2 sw=2 expandtab :
+set -o errexit  # Exit on most errors (see the manual)
+set -o errtrace # Make sure any error trap is inherited
+set -o nounset  # Disallow expansion of unset variables
+set -o pipefail # Use last non-zero exit code in a pipelin
 
 function CreateNewClient() {
   local ClientName="${1}"
