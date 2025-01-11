@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+#
+# vi: set ff=unix syntax=sh cc=80 ts=2 sw=2 expandtab :
+
 # @function: DockerIsThisDocker
 # @description: Verifica se onde está sendo executada a função está dentro de Docker
 # @noargs
@@ -18,13 +22,13 @@ function DockerIsThisDocker() {
 # @exitcode 0 Sucesso
 # @exitcode 1 Função DockerIsThisDocker não foi encontrada
 function DockerIsThisDockerMessage() {
-  if [ $(DockerIsThisDocker) -eq 1 ]; then
+  if [ "$(DockerIsThisDocker)" -eq 1 ]; then
     echo "${FUNCNAME[0]}: Não consigo identificar uma instalação de Docker neste ambiente, saindo"
 
     return 1
   fi
 
-  if [ $(DockerIsThisDocker) -eq 0 ]; then
+  if [ "$(DockerIsThisDocker)" -eq 0 ]; then
     echo "Docker:T"
   else
     echo "Docker:F"
@@ -38,16 +42,16 @@ function DockerIsThisDockerMessage() {
 # @exitcode 0 Sucesso
 # @exitcode 1 Falha
 function DockerInDocker() {
-  if [ $(DockerIsThisDocker) -eq 1 ]; then
+  if [ "$(DockerIsThisDocker)" -eq 1 ]; then
     echo "${FUNCNAME[0]}: Não consigo identificar uma instalação de Docker neste ambiente, saindo"
 
     return 1
   fi
 
   docker container run -it \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  --privileged docker \
-  /bin/sh -c "apk add bash && /bin/bash"
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    --privileged docker \
+    /bin/sh -c "apk add bash && /bin/bash"
 }
 
 # @function: DockerImageSize
@@ -57,16 +61,16 @@ function DockerInDocker() {
 # @exitcode 0 Sucesso
 # @exitcode 1 Falha
 function DockerClientImageSize() {
-  if [ $(DockerIsThisDocker) ]; then
+  if [ "$(DockerIsThisDocker)" ]; then
     echo "${FUNCNAME[0]}: Não consigo identificar uma instalação de Docker neste ambiente, saindo"
 
     return 1
   fi
 
-  docker image ls | \
-  grep ${CLIENT_NAME}/base-tools | \
-  grep -v shared | \
-  awk '{print $7}'
+  docker image ls |
+    grep "${CLIENT_NAME}"/base-tools |
+    grep -v shared |
+    awk '{print $7}'
 }
 
 # @function: DockerSearchImage
@@ -78,15 +82,15 @@ function DockerClientImageSize() {
 function DockerSearchImage() {
   local DockerImageName=${1}
 
-  if [ -z ${DockerImageName} ]; then
+  if [ -z "${DockerImageName}" ]; then
     echo "${FUNCNAME[0]}: Variável não foi definida, saindo"
 
     return 1
   fi
 
-  docker image ls | \
-  grep ${DockerImageName} | \
-  awk '{print $1}'
+  docker image ls |
+    grep "${DockerImageName}" |
+    awk '{print $1}'
 }
 
 # @function: HelperDockerGetTag
@@ -118,14 +122,14 @@ function DockerGetTag() {
       if [ ${Cache} -eq 0 ]; then
         content=$(curl --silent "${url}")
       else
-        content=$(cache -e ${CACHE} -- curl --silent "${url}")
+        content=$(cache -e "${Cache}" -- curl --silent "${url}")
       fi
       ((counter++))
-      url=$(jq -r '.next // empty' <<< "${content}")
+      url=$(jq -r '.next // empty' <<<"${content}")
       echo -n "${content}"
     done
-  ) | jq -s '[.[].results[]]' \
-    | jq 'map({tag: .name, image: .images[] | select(.architecture|match("'${Arch}'")) | select(.os|match("'${OS}'"))}) | map({tag: .tag}) | unique | sort_by(.tag)' \
-    | jq -c '.[].tag' | \
+  ) | jq -s '[.[].results[]]' |
+    jq 'map({tag: .name, image: .images[] | select(.architecture|match("'"${Arch}"'")) | select(.os|match("'"${OS}"'"))}) | map({tag: .tag}) | unique | sort_by(.tag)' |
+    jq -c '.[].tag' |
     tail -n ${Quantity}
 }
