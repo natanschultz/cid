@@ -1,3 +1,8 @@
+#!/usr/bin/env bash
+#
+# vi: set ff=unix syntax=sh cc=80 ts=2 sw=2 expandtab :
+# shellcheck disable=SC2016,SC2034
+
 declare TerraformVersionsPath="${ENV_DIRECTORY_INSTALLATION}/terraform-versions"
 
 # @function: TerraformInitCommand
@@ -21,33 +26,34 @@ function TerraformInitCommand() {
       return 1
     fi
 
-    AWSGetCredentials | \
-    grep -v "^#" | \
-    grep "\[*\]" | \
-    tr -d '[]' | \
-    grep "${CLIENT_NAME}" | \
-    while read Account; do
-      echo; echo "${_GREEN}Terraform init: ${_RESET}${_RED}${Account}${_RESET}"
+    AWSGetCredentials |
+      grep -v "^#" |
+      grep "\[*\]" |
+      tr -d '[]' |
+      grep "${CLIENT_NAME}" |
+      while read -r Account; do
+        echo
+        echo "${_GREEN}Terraform init: ${_RESET}${_RED}${Account}${_RESET}"
 
-      TerraformAWSAccessKeyId=$(AWSGetCredentials | \
-      grep -A2 ${Account} | \
-      sed '1d' | \
-      grep "aws_access_key_id" | \
-      cut -d "=" -f2)
+        TerraformAWSAccessKeyId=$(AWSGetCredentials |
+          grep -A2 "${Account}" |
+          sed '1d' |
+          grep "aws_access_key_id" |
+          cut -d "=" -f2)
 
-      TerraformAWSSecretAccessKey=$(AWSGetCredentials | \
-      grep -A2 ${Account} | \
-      sed '1d' | \
-      grep "aws_secret_access_key" | \
-      cut -d "=" -f2)
+        TerraformAWSSecretAccessKey=$(AWSGetCredentials |
+          grep -A2 "${Account}" |
+          sed '1d' |
+          grep "aws_secret_access_key" |
+          cut -d "=" -f2)
 
-      cat <<<'
+        cat <<<'
       terraform init \
       -backend-config="access_key=${TerraformAWSAccessKeyId}" \
       -backend-config="secret_key=${TerraformAWSSecretAccessKey}" \
       -backend-config="region=us-east-1" \
       -backend-config="profile=${Account}'
-    done
+      done
   else
     echo "Provider não existe ou não foi fornecido no arquivo .env.config"
   fi
@@ -72,7 +78,7 @@ function TerraformInstallTfLint() {
 # @return: String
 # @exitcode 0 Sucesso
 function TerraformDocsInstall() {
-  curl -sSLo /tmp/terraform-docs.tar.gz https://terraform-docs.io/dl/v${TERRAFORM_DOCS_VERSION}/terraform-docs-v${TERRAFORM_DOCS_VERSION}-$(uname)-amd64.tar.gz
+  curl -sSLo /tmp/terraform-docs.tar.gz "https://terraform-docs.io/dl/v${TERRAFORM_DOCS_VERSION}/terraform-docs-v${TERRAFORM_DOCS_VERSION}-$(uname)-amd64.tar.gz"
   tar -xzf /tmp/terraform-docs.tar.gz --directory /usr/bin
   chmod +x /usr/bin/terraform-docs
 }
@@ -92,7 +98,7 @@ function TerraformInstall() {
 
   local TerraformVersion="${1}"
 
-  if [ -z ${TerraformVersion} ]; then
+  if [ -z "${TerraformVersion}" ]; then
     echo "${FUNCNAME[0]}: Versão do Terraform não identificada"
 
     return 1
@@ -101,14 +107,14 @@ function TerraformInstall() {
   local TerraformPackage="terraform_${TerraformVersion}_linux_${TerraformArchitecture}.zip"
 
   # Caso não existir ainda o diretório da versão selecionado, será criado.
-  mkdir -p ${TerraformVersionsPath}/${TerraformVersion}
+  mkdir -p "${TerraformVersionsPath}/${TerraformVersion}"
 
   (
-    cd ${TerraformVersionsPath}/${TerraformVersion}
-    wget https://releases.hashicorp.com/terraform/${TerraformVersion}/${TerraformPackage}
-    unzip -q ${TerraformPackage}
+    cd "${TerraformVersionsPath}/${TerraformVersion}" || return 1
+    wget "https://releases.hashicorp.com/terraform/${TerraformVersion}/${TerraformPackage}"
+    unzip -q "${TerraformPackage}"
 
-    rm ${TerraformPackage}
+    rm "${TerraformPackage}"
   )
 
   TerraformDocsInstall
@@ -130,7 +136,7 @@ function TerraformVersionExists() {
 
   local TerraformVersion="${1}"
 
-  if [ -z ${TerraformVersion} ]; then
+  if [ -z "${TerraformVersion}" ]; then
     echo "${FUNCNAME[0]}: Versão do Terraform não identificada"
 
     return 1
@@ -138,7 +144,7 @@ function TerraformVersionExists() {
 
   # Se não existir o binário para a versão selecionada, chama a função para instalação do Terraform.
   if [ ! -e "${TerraformVersionsPath}/${TerraformVersion}/terraform" ]; then
-    TerraformInstall ${TerraformVersion}
+    TerraformInstall "${TerraformVersion}"
   fi
 }
 
@@ -155,7 +161,7 @@ function TerraformShowInstalledVersions() {
     return 1
   fi
 
-  ls -1 ${TerraformVersionsPath}
+  ls -1 "${TerraformVersionsPath}"
 }
 
 # @function: TerraformSetVersion
@@ -179,9 +185,9 @@ function TerraformSetVersion() {
     return 1
   fi
 
-  TerraformVersionExists ${TerraformVersion}
+  TerraformVersionExists "${TerraformVersion}"
 
-  ln -sf ${TerraformVersionsPath}/${TerraformVersion}/terraform ${ENV_DIRECTORY_INSTALLATION}/terraform
+  ln -sf "${TerraformVersionsPath}"/"${TerraformVersion}"/terraform "${ENV_DIRECTORY_INSTALLATION}"/terraform
 }
 
 # @function: TerraformGetCurrentWorkspace
@@ -202,23 +208,24 @@ function TerraformGetCurrentWorkspace() {
     return 1
   fi
 
-  if [ -e ".terraform" -a -e "versions.tf" ]; then
-    local TerraformVersion="$(
-      cat versions.tf | \
-      grep required_version | \
-      cut -d "=" -f2- | \
-      sed -e 's/[ "\,\r$\s>=]//g'
+  if [ -e ".terraform" ] && [ -e "versions.tf" ]; then
+    local TerraformVersion
+    TerraformVersion="$(
+      grep required_version versions.tf |
+        cut -d "=" -f2- |
+        sed -e 's/[ "\,\r$\s>=]//g'
     )"
 
     # Se não existir o binário para a versão selecionada, chama a função para instalação do Terraform.
     if [ ! -e "${TerraformVersionsPath}/${TerraformVersion}/terraform" ]; then
-      TerraformInstall ${TerraformVersion}
+      TerraformInstall "${TerraformVersion}"
     fi
 
     # Cria o atalho para a versão correspondente.
-    TerraformSetVersion ${TerraformVersion}
+    TerraformSetVersion "${TerraformVersion}"
 
-    local TerraformWorkspace=$(terraform workspace show)
+    local TerraformWorkspace
+    TerraformWorkspace="$(terraform workspace show)"
 
     if [ "x${TerraformVersion}" != "x" ]; then
       echo -en "| (tw:${TerraformWorkspace}|v:${TerraformVersion})"
