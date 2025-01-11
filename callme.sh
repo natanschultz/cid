@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+#
+# vi: set ff=unix syntax=sh cc=80 ts=2 sw=2 expandtab :
+#
 
 set -e
 
@@ -26,18 +29,18 @@ function ContainersClientGetList() {
     exit 1
   fi
 
-  grep "container_name:" clients/${ClientName}/${ClientName}.containers.yml | \
-  awk '{print $2}' | \
-  grep -v docker-template
+  grep "container_name:" clients/${ClientName}/${ClientName}.containers.yml |
+    awk '{print $2}' |
+    grep -v docker-template
 }
 
 # Caso a variável booleana JOKE_CHUCK_NORRIS seja definida como verdadeira, o script exibe uma caixa de diálogo com uma piada
 # do Chuck Norris. A piada é gerada pela função JokeChuckNorris. Em seguida, o script aguarda por 10 segundos antes de continuar
 if [ ${JOKE_CHUCK_NORRIS} = true ]; then
   dialog \
-  --title "Chuck Jokes" \
-  --infobox "$(JokeChuckNorris)" \
-  0 0
+    --title "Chuck Jokes" \
+    --infobox "$(JokeChuckNorris)" \
+    0 0
 
   sleep 10
 fi
@@ -65,7 +68,7 @@ declare ClientIndex=1
 for ClientNameOptionMenu in $(ls -1 clients); do
   ClientsNames+=("${ClientIndex}")
   ClientsNames+=("${ClientNameOptionMenu}")
-  ((ClientIndex=ClientIndex+1))
+  ((ClientIndex = ClientIndex + 1))
 done
 
 # O comando dialog é utilizado para criar um menu de seleção de clientes. O menu apresenta uma lista de opções correspondentes aos
@@ -73,13 +76,13 @@ done
 # ClientsNames. A escolha do usuário é armazenada na variável ClientNameOption
 ClientNameOption=$(
   dialog \
-  --no-cancel \
-  --backtitle "${DialogBackTitle}" \
-  --title "${DialogTitle}" \
-  --menu "Escolha o cliente desejado abaixo" \
-  ${DialogHeight} ${DialogWidth} 0 \
-  ${ClientsNames[@]} \
-  ${ClientIndex} "Sair" 2>&1 >/dev/tty
+    --no-cancel \
+    --backtitle "${DialogBackTitle}" \
+    --title "${DialogTitle}" \
+    --menu "Escolha o cliente desejado abaixo" \
+    ${DialogHeight} ${DialogWidth} 0 \
+    ${ClientsNames[@]} \
+    ${ClientIndex} "Sair" 2>&1 >/dev/tty
 )
 
 # Se opção escolhida foi para sair
@@ -105,18 +108,18 @@ declare -a ContainersList=()
 for Container in $(ContainersClientGetList ${ClientName}); do
   ContainersList+=("${ClientIndex}")
   ContainersList+=("${Container}")
-  ((ClientIndex=ClientIndex+1))
+  ((ClientIndex = ClientIndex + 1))
 done
 
 declare ClientNameContainer=$(dialog \
---no-cancel \
---backtitle "${DialogBackTitle}" \
---title "${DialogTitle}" \
---menu "Listando containers para o cliente ${ClientName}" \
-${DialogHeight} ${DialogWidth} 0 \
-${ContainersList[@]} \
-- ---------- \
-${ClientIndex} "Sair" 2>&1 >/dev/tty)
+  --no-cancel \
+  --backtitle "${DialogBackTitle}" \
+  --title "${DialogTitle}" \
+  --menu "Listando containers para o cliente ${ClientName}" \
+  ${DialogHeight} ${DialogWidth} 0 \
+  ${ContainersList[@]} \
+  - ---------- \
+  ${ClientIndex} "Sair" 2>&1 >/dev/tty)
 
 if [ ${ClientNameContainer} -eq ${ClientIndex} ]; then
   exit 1
@@ -127,15 +130,15 @@ declare ClientNameContainerName=${ContainersList[${ClientNameContainerSelected}]
 
 if [ "${ClientNameContainerName}" == "docs" ]; then
   docker compose \
-  -f ${ClientPath}/${ClientName}/${ClientName}.containers.yml \
-  --env-file=${ClientPath}/${ClientName}/.env.common \
-  --build docs
+    -f ${ClientPath}/${ClientName}/${ClientName}.containers.yml \
+    --env-file=${ClientPath}/${ClientName}/.env.common \
+    --build docs
 else
   docker compose \
-  -f ${ClientPath}/${ClientName}/${ClientName}.secrets.yml \
-  -f ${ClientPath}/${ClientName}/${ClientName}.containers.yml \
-  --env-file=${ClientPath}/${ClientName}/.env.common \
-  run ${ClientNameContainerName}
+    -f ${ClientPath}/${ClientName}/${ClientName}.secrets.yml \
+    -f ${ClientPath}/${ClientName}/${ClientName}.containers.yml \
+    --env-file=${ClientPath}/${ClientName}/.env.common \
+    run ${ClientNameContainerName}
 fi
 
 #reset
