@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+#
+# vi: set ff=unix syntax=sh cc=80 ts=2 sw=2 expandtab :
+
 # @function: AWSLambdaListFunctions
 # @description: Lista todas as lambdas
 # @noargs
@@ -5,8 +9,8 @@
 # @exitcode 0 Sucesso
 function AWSLambdaListFunctions() {
   aws lambda list-functions \
-  --query 'Functions[].FunctionName' \
-  --output table
+    --query 'Functions[].FunctionName' \
+    --output table
 }
 
 # @function: AWSLambdaInvokeFunction
@@ -18,13 +22,13 @@ function AWSLambdaListFunctions() {
 function AWSLambdaInvokeFunction() {
   local AWSFunctionName="${1}"
 
-  if [ -z ${AWSFunctionName} ]; then
+  if [ -z "${AWSFunctionName}" ]; then
     echo "${FUNCNAME[0]}: Passe o nome da função para ser invocada"
 
     return 1
   fi
 
   aws lambda invoke \
-  --function-name ${AWSFunctionName} \
-  /tmp/${AWSFunctionName}.json
+    --function-name "${AWSFunctionName}" \
+    /tmp/"${AWSFunctionName}".json
 }
