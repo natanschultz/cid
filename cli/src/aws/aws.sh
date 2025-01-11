@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+#
+# vi: set ff=unix syntax=sh cc=80 ts=2 sw=2 expandtab :
+
 # @function: AWSGetCredentials
 # @description: Mostra suas credenciais
 # @noargs
@@ -5,13 +9,13 @@
 # @exitcode 0 Sucesso
 # @exitcode 1 Não for encontrado o arquivo necessário
 function AWSGetCredentials() {
-  if [ ! -e $HOME/.aws/credentials ]; then
+  if [ ! -e "${HOME}"/.aws/credentials ]; then
     echo "${FUNCNAME[0]}: Arquivo $HOME/.aws/credentials não existe, saindo"
 
     return 1
   fi
 
-  cat $HOME/.aws/credentials
+  cat "${HOME}"/.aws/credentials
 }
 
 # @function: AWSGetCredentialsAccessKeyId
@@ -27,11 +31,11 @@ function AWSGetCredentialsAccessKeyId() {
     return 1
   fi
 
-  AWSGetCredentials | \
-  grep -A2 ${ENV_PREFIX} | \
-  sed '1d' | \
-  grep "aws_access_key_id" | \
-  cut -d "=" -f2
+  AWSGetCredentials |
+    grep -A2 "${ENV_PREFIX}" |
+    sed '1d' |
+    grep "aws_access_key_id" |
+    cut -d "=" -f2
 }
 
 # @function: AWSGetCredentialsAccessKey
@@ -47,11 +51,11 @@ function AWSGetCredentialsAccessKey() {
     return 1
   fi
 
-  AWSGetCredentials | \
-  grep -A2 ${ENV_PREFIX} | \
-  sed '1d' | \
-  grep "aws_secret_access_key" | \
-  cut -d "=" -f2
+  AWSGetCredentials |
+    grep -A2 "${ENV_PREFIX}" |
+    sed '1d' |
+    grep "aws_secret_access_key" |
+    cut -d "=" -f2
 }
 
 # @function: AWSGetCredentialsCreateEnvVariableAccessKeyId
@@ -67,7 +71,8 @@ function AWSGetCredentialsCreateEnvVariableAccessKeyId() {
     return 1
   fi
 
-  export AWS_ACCESS_KEY_ID=$(AWSGetCredentialsAccessKeyId)
+  AWS_ACCESS_KEY_ID=$(AWSGetCredentialsAccessKeyId)
+  export AWS_ACCESS_KEY_ID
 }
 
 # @function: AWSGetCredentialsCreateEnvVariableAccessKey
@@ -83,5 +88,6 @@ function AWSGetCredentialsCreateEnvVariableAccessKey() {
     return 1
   fi
 
-  export AWS_SECRET_ACCESS_KEY=$(AWSGetCredentialsAccessKey)
+  AWS_SECRET_ACCESS_KEY=$(AWSGetCredentialsAccessKey)
+  export AWS_SECRET_ACCESS_KEY
 }
