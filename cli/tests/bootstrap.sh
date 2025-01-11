@@ -1,4 +1,9 @@
-source ${CLI_FULL_PATH}/tests/tests.sh
+#!/usr/bin/env bash
+#
+# vi: set ff=unix syntax=sh cc=80 ts=2 sw=2 expandtab :
+# shellcheck disable=SC1091
+
+source "${CLI_FULL_PATH}"/tests/tests.sh
 
 function TestAllFunctions() {
 
