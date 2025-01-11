@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+#
+# vi: set ff=unix syntax=sh cc=80 ts=2 sw=2 expandtab :
+
 # Funções para manipulação da AWS em CLI
 
 # @function: AWSGetCredentials
@@ -7,13 +11,13 @@
 # @exitcode 0 Sucesso
 # @exitcode 1 Não for encontrado o arquivo necessário
 function AWSGetCredentials() {
-  if [ ! -e $HOME/.aws/credentials ]; then
+  if [ ! -e "$HOME"/.aws/credentials ]; then
     echo "${FUNCNAME[0]}: Arquivo $HOME/.aws/credentials não existe, saindo"
 
     return 1
   fi
 
-  cat $HOME/.aws/credentials
+  cat "$HOME"/.aws/credentials
 }
 
 # API Gateway
@@ -24,8 +28,8 @@ function AWSGetCredentials() {
 # @exitcode 0 Sucesso
 function AWSApiGatewayGetAll() {
   aws apigateway get-domain-names \
-  --query "items[].[domainName,distributionDomainName,certificateArn,distributionHostedZoneId]" \
-  --output json
+    --query "items[].[domainName,distributionDomainName,certificateArn,distributionHostedZoneId]" \
+    --output json
 }
 
 # API Gateway
@@ -36,8 +40,8 @@ function AWSApiGatewayGetAll() {
 # @exitcode 0 Sucesso
 function AWSApiGatewayGetRestAPIs() {
   aws apigateway get-rest-apis \
-  --query 'items[].id' \
-  --output text
+    --query 'items[].id' \
+    --output text
 }
 
 # API Gateway
@@ -56,15 +60,15 @@ function AWSApiGatewayGetResources() {
 
   local AWSDirectory="/tmp/api-resources"
 
-  mkdir -p ${AWSDirectory} 2>/dev/null
+  mkdir -p "${AWSDirectory}" 2>/dev/null
 
   for AWSAPIGatewayId in $(AWSApiGatewayGetRestAPIs); do
     local AWSFileApiResources="${AWSDirectory}/${AWSAPIGatewayId}-resources.json"
 
-    echo "Listando API ${AWSAPIGatewayId}" >| ${AWSFileApiResources}
+    echo "Listando API ${AWSAPIGatewayId}" >|"${AWSFileApiResources}"
     aws apigateway get-resources \
-    --rest-api-id ${AWSAPIGatewayId} \
-    --query "items[].[id,path,pathPart,resourceMethods]" >> ${AWSFileApiResources}
+      --rest-api-id "${AWSAPIGatewayId}" \
+      --query "items[].[id,path,pathPart,resourceMethods]" >>"${AWSFileApiResources}"
     echo
   done
 }
@@ -84,19 +88,19 @@ function AWSApiGatewayGetResourcesIntegrationRequests() {
 
   local AWSDirectory="/tmp/api-resources-integration-requests"
 
-  mkdir -p ${AWSDirectory} 2>/dev/null
+  mkdir -p "${AWSDirectory}" 2>/dev/null
 
   for Id in $(AWSApiGatewayGetRestAPIs); do
     local FileOutput="${AWSDirectory}/${Id}-requests.json"
 
     for ResourceId in $(aws apigateway get-resources \
-      --rest-api-id ${Id} \
+      --rest-api-id "${Id}" \
       --query 'items[].id' \
       --output text); do
       aws apigateway get-integration \
-      --rest-api-id ${Id} \
-      --resource-id ${ResourceId} \
-      --http-method GET 2>/dev/null > ${FileOutput}
+        --rest-api-id "${Id}" \
+        --resource-id "${ResourceId}" \
+        --http-method GET 2>/dev/null >"${FileOutput}"
     done
   done
 }
