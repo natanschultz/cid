@@ -1,11 +1,16 @@
+#!/usr/bin/env bash
+#
+# vi: set ff=unix syntax=sh cc=80 ts=2 sw=2 expandtab :
+# shellcheck disable=SC1091
+
 # @function: AWSEKSGetClusters
 # @description: Lista todos os clusters da conta utilizada no ambiente
 # @noargs
 # @return: List<String>
 # @exitcode 0 Sucesso
 function AWSEKSGetClusters() {
-  aws eks list-clusters | \
-  jq -r ".clusters[]"
+  aws eks list-clusters |
+    jq -r ".clusters[]"
 }
 
 # @function: AWSEKSGenerateAuths
@@ -38,27 +43,30 @@ function AWSEKSGenerateAuths() {
 
   local AWSEKSClusterName=${1}
 
-  if [ -z ${AWSEKSClusterName} ]; then
+  if [ -z "${AWSEKSClusterName}" ]; then
     echo "${FUNCNAME[0]}: Nome do cluster não informado, saindo"
 
     return 1
   fi
 
   echo "Aguarde, procurando o nome do cluster"
-  AWSEKSGetClusters | while read AWSEKSCluster; do
+  AWSEKSGetClusters | while read -r AWSEKSCluster; do
     if [ "${AWSEKSCluster}" == "${AWSEKSClusterName}" ]; then
-      echo; echo "${FUNCNAME[0]}: Cluster ${_CYAN}${AWSEKSClusterName}${_RESET} encontrado."
+      echo
+      echo "${FUNCNAME[0]}: Cluster ${_CYAN}${AWSEKSClusterName}${_RESET} encontrado."
 
       aws eks update-kubeconfig \
-      --name ${AWSEKSClusterName} \
-      --kubeconfig ${HOME}/.kube/${AWSEKSClusterName}
+        --name "${AWSEKSClusterName}" \
+        --kubeconfig "${HOME}"/.kube/"${AWSEKSClusterName}"
 
-      ln -sf ${HOME}/.kube/${AWSEKSClusterName} ${HOME}/.kube/config
+      ln -sf "${HOME}"/.kube/"${AWSEKSClusterName}" "${HOME}"/.kube/config
 
-      KubernetesSetCurrentCluster ${AWSEKSClusterName}
+      KubernetesSetCurrentCluster "${AWSEKSClusterName}"
 
-      echo; echo "Recarregando o PS1 para setar o cluster nas variáveis, aguarde.."; sleep 5
-      source ${HOME}/.bashrc
+      echo
+      echo "Recarregando o PS1 para setar o cluster nas variáveis, aguarde.."
+      sleep 5
+      source "${HOME}"/.bashrc
       clear
 
       break
@@ -105,13 +113,14 @@ function AWSEKSGetNodeGroupsByCluster() {
 
   local AWSEKSClusterName="${1}"
 
-  if [ -z ${AWSEKSClusterName} ]; then
-    local AWSEKSClusterName=$(KubernetesGetCurrentCluster)
+  if [ -z "${AWSEKSClusterName}" ]; then
+    local AWSEKSClusterName
+    AWSEKSClusterName=$(KubernetesGetCurrentCluster)
   fi
 
   aws eks list-nodegroups \
-  --cluster-name ${AWSEKSClusterName} | \
-  jq -r '.nodegroups[]'
+    --cluster-name "${AWSEKSClusterName}" |
+    jq -r '.nodegroups[]'
 }
 
 # @function: KubernetesListNodesPerLabel
@@ -130,20 +139,22 @@ function AWSEKSListNodesPerLabel() {
 
   local KubernetesClusterName=${1}
 
-  if [ -z ${KubernetesClusterName} ]; then
-    local KubernetesClusterName=$(KubernetesGetCurrentCluster)
+  if [ -z "${KubernetesClusterName}" ]; then
+    local KubernetesClusterName
+    KubernetesClusterName=$(KubernetesGetCurrentCluster)
   fi
 
   for KubernetesGroup in $(AWSEKSGetNodeGroupsByCluster); do
-    echo; echo -e "Listando máquinas para node group ${_CYAN}${KubernetesGroup}${_RESET}"
+    echo
+    echo -e "Listando máquinas para node group ${_CYAN}${KubernetesGroup}${_RESET}"
 
     kubectl get node --selector sre/node-group="$(
-      echo ${KubernetesGroup} | \
-      rev | \
-      cut -d - -f2- | \
-      rev
+      echo "${KubernetesGroup}" |
+        rev |
+        cut -d - -f2- |
+        rev
     )" \
-    --no-headers
+      --no-headers
   done
 }
 
@@ -158,15 +169,15 @@ function AWSEKSListNodesPerLabel() {
 function AWSEKSDescribeNodeGroupsByCluster() {
   local AWSEKSNodeGroup="${1}"
 
-  if [ -z ${AWSEKSNodeGroup} ]; then
+  if [ -z "${AWSEKSNodeGroup}" ]; then
     echo "${FUNCNAME[0]}: Informe o nodegroup a ser pesquisado, saindo"
 
     return 1
   fi
 
   aws eks describe-nodegroup \
-  --cluster-name $(KubernetesGetCurrentCluster) \
-  --nodegroup-name ${AWSEKSNodeGroup}
+    --cluster-name "$(KubernetesGetCurrentCluster)" \
+    --nodegroup-name "${AWSEKSNodeGroup}"
 }
 
 # @function: AWSEKSGetNodeGroupsInfos
@@ -199,22 +210,23 @@ function AWSEKSGetNodeGroupsInfos() {
 
   local KubernetesGetCurrentCluster="${1}"
 
-  if [ -z ${KubernetesGetCurrentCluster} ]; then
+  if [ -z "${KubernetesGetCurrentCluster}" ]; then
     echo "${FUNCNAME[0]}: Não foi informado um cluster a ser pesquisado."
     echo "${FUNCNAME[0]}: Usando o cluster corrente ${_CYAN}$(KubernetesGetCurrentCluster)${_RESET}"
 
-    local KubernetesGetCurrentCluster="$(KubernetesGetCurrentCluster)"
+    local KubernetesGetCurrentCluster
+    KubernetesGetCurrentCluster="$(KubernetesGetCurrentCluster)"
   fi
 
-  AWSEKSGetClusters | \
-  while read AWSEKSClusterName; do
-    echo "${AWSEKSClusterName}: "
-    AWSEKSGetNodeGroupsByCluster $(KubernetesGetCurrentCluster) | \
-    while read AWSEKSNodeGroupName; do
-      AWSEKSDescribeNodeGroupsByCluster ${AWSEKSClusterName} ${AWSEKSNodeGroupName} | \
-      jq ${NodeGroupInformation}
+  AWSEKSGetClusters |
+    while read -r AWSEKSClusterName; do
+      echo "${AWSEKSClusterName}: "
+      AWSEKSGetNodeGroupsByCluster "$(KubernetesGetCurrentCluster)" |
+        while read -r AWSEKSNodeGroupName; do
+          AWSEKSDescribeNodeGroupsByCluster "${AWSEKSClusterName}" "${AWSEKSNodeGroupName}" |
+            jq "${NodeGroupInformation:-}"
+        done
     done
-  done
 }
 
 # @function: AWSEKSGetAmountNodes
@@ -244,17 +256,17 @@ function AWSEKSGetAmountNodes() {
     return 1
   fi
 
-  AWSEKSGetClusters | \
-  while read AWSEKSClusterName; do
-    echo -n "${AWSEKSClusterName}: "
-    AWSEKSGetNodeGroupsByCluster ${AWSEKSClusterName} | \
-    while read AWSEKSNodeGroup; do \
-      AWSEKSDescribeNodeGroupsByCluster ${AWSEKSClusterName} ${AWSEKSNodeGroup} | \
-      jq '.nodegroup.scalingConfig.desiredSize'
-    done | \
-    paste -s -d+ - | \
-    bc
-  done
+  AWSEKSGetClusters |
+    while read -r AWSEKSClusterName; do
+      echo -n "${AWSEKSClusterName}: "
+      AWSEKSGetNodeGroupsByCluster "${AWSEKSClusterName}" |
+        while read -r AWSEKSNodeGroup; do
+          AWSEKSDescribeNodeGroupsByCluster "${AWSEKSClusterName}" "${AWSEKSNodeGroup}" |
+            jq '.nodegroup.scalingConfig.desiredSize'
+        done |
+        paste -s -d+ - |
+        bc
+    done
 }
 
 # @function: AWSEKSGetClusterVersion
@@ -270,13 +282,13 @@ function AWSEKSGetClusterVersion() {
     return 1
   fi
 
-  AWSEKSGetClusters | \
-  while read AWSEKSClusterName; do
-    echo -n "${AWSEKSClusterName}: "
-    aws eks describe-cluster \
-    --name ${AWSEKSClusterName} | \
-    jq -r '.cluster.version'
-  done
+  AWSEKSGetClusters |
+    while read -r AWSEKSClusterName; do
+      echo -n "${AWSEKSClusterName}: "
+      aws eks describe-cluster \
+        --name "${AWSEKSClusterName}" |
+        jq -r '.cluster.version'
+    done
 }
 
 # @function: AWSEKSGetAmountNodeGroups
@@ -299,12 +311,12 @@ function AWSEKSGetAmountNodeGroups() {
     return 1
   fi
 
-  AWSEKSGetClusters | \
-  while read AWSEKSClusterName; do
-    echo -n "${AWSEKSClusterName}: "
-    AWSEKSGetNodeGroupsByCluster ${AWSEKSClusterName} | \
-    wc -l
-  done
+  AWSEKSGetClusters |
+    while read -r AWSEKSClusterName; do
+      echo -n "${AWSEKSClusterName}: "
+      AWSEKSGetNodeGroupsByCluster "${AWSEKSClusterName}" |
+        wc -l
+    done
 }
 
 # @function: AWSEKSListNodeGroupsNamesByCluster
